@@ -146,7 +146,7 @@ int main(int argc, char ** argv)
     else {
       configfile = voxel_resolve_file(option.voxel_filename, option.verbose);
       if (NULL == configfile) {
-	fprintf(stderr, "error resolving voxel file %s: ",
+	fprintf(stderr, "error resolving voxel file %s\n",
 		option.voxel_filename);
 	exit(EXIT_FAILURE);
       }

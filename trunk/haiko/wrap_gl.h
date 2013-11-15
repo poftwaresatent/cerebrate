@@ -37,7 +37,7 @@
 #  include "config.h"
 # endif
 
-# ifdef LINUX
+# if defined( LINUX ) | defined( OPENBSD )
 #  include <GL/gl.h>
 # endif
 

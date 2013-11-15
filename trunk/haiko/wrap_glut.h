@@ -33,7 +33,7 @@
 #ifndef HAIKO_WRAP_GLUT_H
 # define HAIKO_WRAP_GLUT_H
 
-# ifdef LINUX
+# if defined( LINUX ) | defined( OPENBSD )
 #  include <GL/glut.h>
 # endif
 

@@ -285,7 +285,7 @@ void draw()
   glFlush();
 #ifndef OSX
   glutSwapBuffers();
-#endif OSX
+#endif
 }
 
 

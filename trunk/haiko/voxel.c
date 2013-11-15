@@ -300,7 +300,6 @@ static int path_concat(/** buf is assumed to be char[PATH_MAX] and
 {
   char lbuf[PATH_MAX];
   size_t lhslen, rhslen;
-  char * cur;
   
   if (verbose)
     printf("  path_concat(buf, \"%s\", \"%s\")\n", lhs, rhs);
@@ -323,9 +322,20 @@ static int path_concat(/** buf is assumed to be char[PATH_MAX] and
     return -1;
   }
   
-  cur = stpcpy(lbuf, lhs);
-  *cur = dirsep;
-  strcpy(cur + 1, rhs);
+#ifndef OPENBSD
+  {
+    char * cur = stpcpy(lbuf, lhs);
+    *cur = dirsep;
+    strcpy(cur + 1, rhs);
+  }
+#else
+  {
+    char dsbuf[] = { dirsep, '\0' };
+    strcpy(lbuf, lhs);
+    strcat(lbuf, dsbuf);
+    strcat(lbuf, rhs);
+  }
+#endif
   
   if (verbose)
     printf("  path_concat(): calling realpath(\"%s\", buf)\n", lbuf);
