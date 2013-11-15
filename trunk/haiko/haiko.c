@@ -51,12 +51,11 @@ static void timer(int handle);
 static void mouse(int button, int state, int x, int y);
 static void motion(int x, int y);
 static void cleanup();
-static void setup_lights();
 static void just_axes();
 
 
 static unsigned int timer_delay = 100;
-static int winwidth, winheight, clearbits;
+static int winwidth, winheight;
 static trackball_state * trackball;
 static int left_down = 0;
 static double theta = 0;
@@ -136,14 +135,13 @@ int main(int argc, char ** argv)
   init_glut(&argc, argv, winwidth, winheight);
   
   glClearColor(0.0, 0.0, 0.0, 0.0);
-  clearbits = GL_COLOR_BUFFER_BIT;
   
   glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
   glEnable(GL_COLOR_MATERIAL);
-  setup_lights();
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
   
   glEnable(GL_DEPTH_TEST);
-  clearbits |= GL_DEPTH_BUFFER_BIT;
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
   
@@ -205,20 +203,22 @@ void reshape(int width, int height)
     eye_x = 2 * center_x + 0.5 * view_rel_dist * dim_x / view_rad;
     eye_y = 2 * center_y + 0.5 * view_rel_dist * dim_y / view_rad;
     eye_z = 2 * center_z + 0.5 * view_rel_dist * dim_z / view_rad;
-    printf("view_rad: %g\n"
-	   "view_rel_dist: %g\n"
-	   "view_dist: %g\n"
-	   "view_lrbt: %g\n"
-	   "view_far: %g\n"
-	   "view_near: %g\n"
-	   "center_x: %g\n"
-	   "center_y: %g\n"
-	   "center_z: %g\n"
-	   "eye_x: %g\n"
-	   "eye_y: %g\n"
-	   "eye_z: %g\n",
-	   view_rad, view_rel_dist, view_dist, view_lrbt, view_far, view_near,
-	   center_x, center_y, center_z, eye_x, eye_y, eye_z);
+    if (verbose)
+      printf("reshape() init:\n"
+	     " view_rad: %g\n"
+	     " view_rel_dist: %g\n"
+	     " view_dist: %g\n"
+	     " view_lrbt: %g\n"
+	     " view_far: %g\n"
+	     " view_near: %g\n"
+	     " center_x: %g\n"
+	     " center_y: %g\n"
+	     " center_z: %g\n"
+	     " eye_x: %g\n"
+	     " eye_y: %g\n"
+	     " eye_z: %g\n",
+	     view_rad, view_rel_dist, view_dist, view_lrbt, view_far,
+	     view_near, center_x, center_y, center_z, eye_x, eye_y, eye_z);
   }
   
   if (width > height)
@@ -245,21 +245,24 @@ void reshape(int width, int height)
 
 void draw()
 {
-  GLfloat amb[] = { 0.8, 0.8, 0.8, 1.0 };
+  GLfloat amb[] = { 0.5, 0.5, 0.5, 1.0 };
+  GLfloat position[] = { dim_x, dim_y, dim_z, 1.0 };  
   
-  glClear(clearbits);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   
-  glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.2);
-  glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.15);
-  glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.15);
+  glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0);
+  glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.1 / view_rad);
+  glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.01 / view_rad);
   glLightfv(GL_LIGHT0, GL_AMBIENT, amb);
-
+  
   if (0 == ortho_projection)
     gluLookAt(eye_x, eye_y, eye_z,
 	      0, 0, 0,
 	      0, 1, 0);
+  
+  glLightfv(GL_LIGHT0, GL_POSITION, position);
   
 #define ENABLE_TRACKBALL
 #ifdef ENABLE_TRACKBALL
@@ -339,20 +342,6 @@ void cleanup()
     /*     printf("freeing voxels\n"); */
     voxel_free_list(voxel);
   }
-}
-
-
-void setup_lights()
-{
-  GLfloat position[4];
-  position[0] = 1;
-  position[1] = 1;
-  position[2] = 0;
-  position[3] = 1;
-  
-  glEnable(GL_LIGHTING);
-  glLightfv(GL_LIGHT0, GL_POSITION, position);
-  glEnable(GL_LIGHT0);
 }
 
 
