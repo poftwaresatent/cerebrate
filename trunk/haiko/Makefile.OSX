@@ -3,10 +3,10 @@ DDIR = -DDATADIR=\"$(shell pwd)\"
 CC = gcc
 #OPT = -O0 -g
 OPT = -O2
-CFLAGS = -DOSX -DHAVE_COCOA $(DDIR) -Wall $(OPT) -pipe -I/usr/local/png/include
+CFLAGS = -DOSX -DHAVE_COCOA $(DDIR) -Wall $(OPT) -pipe -I/opt/local/include
 
 GFXLIBS = -framework OpenGL -framework GLUT -lobjc
-PNGLIBS = -L/usr/local/png/lib -lpng
+PNGLIBS = -L/opt/local/lib -lpng
 
 YFLAGS = -d
 
