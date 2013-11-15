@@ -59,6 +59,7 @@ static int winwidth, winheight;
 static trackball_state * trackball;
 static int left_down = 0;
 static double theta = 0;
+static int enable_spin = 1;
 static voxel_t * voxel;
 static int dim_x = 0;
 static int dim_y = 0;
@@ -75,10 +76,11 @@ static double center_z;
 static double eye_x;
 static double eye_y;
 static double eye_z;
-static int verbose = 0;		/* todo */
-static int ortho_projection = 0; /* todo */
-static int show_bounding_sphere = 0; /* todo */
-static int axes_only = 0;	/* todo */
+static int verbose = 0;
+static int ortho_projection = 0;
+static int show_bounding_sphere = 0;
+static int axes_only = 0;
+static int reflection_effect = 0;
 static char const * filename = "haiko.conf"; /* todo */
 
 
@@ -134,12 +136,23 @@ int main(int argc, char ** argv)
   
   init_glut(&argc, argv, winwidth, winheight);
   
-  glClearColor(0.0, 0.0, 0.0, 0.0);
+  glClearColor(0.0, 0.0, 0.2, 0.0);
   
   glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
   glEnable(GL_COLOR_MATERIAL);
+  
+  if (reflection_effect) {
+    GLfloat spec[] = { 0.5, 0.8, 1.0, 1.0 };
+    glMaterialfv(GL_FRONT, GL_SPECULAR, spec);
+    glMaterialf(GL_FRONT, GL_SHININESS, 20);
+  }
+  
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
+  {
+    GLfloat amb[] = { 0.5, 0.5, 0.5, 1.0 };
+    glLightfv(GL_LIGHT0, GL_AMBIENT, amb);
+  }
   
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
@@ -171,9 +184,6 @@ void init_glut(int * argc, char ** argv, int width, int height)
     fprintf(stderr, "%s: init_glut(): glutCreateWindow() failed\n", argv[0]);
     exit(EXIT_FAILURE);
   }
-  
-  left_down = 0;
-  theta = 0;
   
   glutDisplayFunc(draw);
   glutReshapeFunc(reshape);
@@ -245,7 +255,6 @@ void reshape(int width, int height)
 
 void draw()
 {
-  GLfloat amb[] = { 0.5, 0.5, 0.5, 1.0 };
   GLfloat position[] = { dim_x, dim_y, dim_z, 1.0 };  
   
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -255,7 +264,6 @@ void draw()
   glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0);
   glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.1 / view_rad);
   glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.01 / view_rad);
-  glLightfv(GL_LIGHT0, GL_AMBIENT, amb);
   
   if (0 == ortho_projection)
     gluLookAt(eye_x, eye_y, eye_z,
@@ -271,9 +279,10 @@ void draw()
   
 #define ENABLE_THETA
 #ifdef ENABLE_THETA
-  glRotatef(theta * 100, 0.0, 1.0, 0.0);
+  glRotatef(180 + theta * 100, 0.0, 1.0, 0.0);
 #endif
   
+  glRotatef(180, 1.0, 0.0, 0.0);
   glTranslatef( - center_x, - center_y, - center_z);  
   
   voxel_draw_list(voxel);
@@ -297,13 +306,19 @@ void keyboard(unsigned char key, int x, int y)
   case 'q':
     exit(EXIT_SUCCESS);
     break;
+  case ' ':
+    if (enable_spin)
+      enable_spin = 0;
+    else
+      enable_spin = 1;
+    break;
   }
 }
 
 
 void timer(int handle)
 {
-  if (0 == left_down)
+  if (enable_spin && (0 == left_down))
     theta += 0.01;
   
   glutSetWindow(handle);
@@ -354,6 +369,7 @@ void usage(FILE * os)
 	  "  -o           use orthogonal projection\n"
 	  "  -s           show bounding sphere\n"
 	  "  -a           no config file, just axes voxels\n"
+	  "  -r           enable reflection effect\n"
 	  "  -f  <file>   configuration file name ('--' means stdin)\n"
 	  "  -d  <dist>   set relative viewing distance\n"
 	  "  -t  <timer>  set timer interval [ms]\n"
@@ -392,6 +408,10 @@ void parse_options(int argc, char ** argv)
 	
       case 'a':
 	axes_only = 1;
+	break;
+	
+      case 'r':
+	reflection_effect = 1;
 	break;
 	
       case 'f':
