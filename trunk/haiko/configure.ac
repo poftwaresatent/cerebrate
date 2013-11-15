@@ -40,12 +40,15 @@ case $host_os in
   *openbsd*)
     AC_MSG_NOTICE([detected OpenBSD])
     HAIKO_CPPFLAGS="$HAIKO_CPPFLAGS -DOPENBSD -I/usr/local/include -I/usr/X11R6/include"
-    HAIKO_LDFLAGS="$HAIKO_LDFLAGS -L/usr/local/lib -L/usr/X11R6/lib"
+    HAIKO_LDFLAGS="$HAIKO_LDFLAGS -L/usr/local/lib -L/usr/X11R6/lib -lm"
     HAIKO_GFXLIBS="-L/usr/X11R6/lib -lX11 -lXi -lXmu -lglut -lGLU -lGL"
+    oldCPPFLAGS="$CPPFLAGS"
+    CPPFLAGS="$HAIKO_CPPFLAGS"
     AC_CHECK_HEADER([GL/gl.h], [],
       [ AC_MSG_ERROR([Haiko requires OpenGL development packages])] )
     AC_CHECK_HEADER([GL/glut.h], [],
-      [ AC_MSG_ERROR([Haiko requires GLUT development packages])] );;
+      [ AC_MSG_ERROR([Haiko requires GLUT development packages])] )
+    CPPFLAGS="$oldCPPFLAGS";;
   darwin*)
     AC_MSG_NOTICE([detected Darwin (OS X)])
     HAIKO_CPPFLAGS="$HAIKO_CPPFLAGS -DOSX -DHAVE_COCOA -Wno-long-double"
