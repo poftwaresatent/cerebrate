@@ -12,18 +12,23 @@ int main(int argc, char ** argv)
   else
     configfile = stdin;
   
-  voxel_parse_file(configfile, &voxel_parse_tab);
-  if (voxel_parse_tab.error)
-    fprintf(stderr, "ooopsie, voxel_parse_tab.error\n");
+  voxel_parse_tab.debug = 1;
+  if (0 != voxel_parse_file(configfile, &voxel_parse_tab))
+    fprintf(stderr, "ooopsie, voxel_parse_file() failed\n");
   else {
-    voxel_t * voxel;
-    int count = 0;
-    for (voxel = voxel_parse_tab.first; NULL != voxel; voxel = voxel->next) {
-      printf("voxel %x [%f %f %f] (%f  %f  %f)\n", voxel,
-	     voxel->x, voxel->y, voxel->z, voxel->r, voxel->g, voxel->b);
-      ++count;
+    if (voxel_parse_tab.error)
+      fprintf(stderr, "ooopsie, voxel_parse_tab.error\n");
+    else {
+      voxel_t * voxel;
+      int count = 0;
+      for (voxel = voxel_parse_tab.first; NULL != voxel; voxel = voxel->next) {
+	printf("voxel %x [%f %f %f] (%f  %f  %f)\n", voxel,
+	       voxel->pos[0], voxel->pos[1], voxel->pos[2],
+	       voxel->color[0], voxel->color[1], voxel->color[2]);
+	++count;
+      }
+      printf("counted %d voxels\n", count);
     }
-    printf("counted %d voxels\n", count);
   }
   
   voxel_free_list(voxel_parse_tab.first);

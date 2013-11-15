@@ -6,10 +6,10 @@
 
 #define YYSTYPE char *
 
-extern FILE * yyin;
+extern FILE * vvin;
 
-extern int yyparse();
-extern int yylex();
+extern int vvparse();
+extern int vvlex();
 
 /* would like to use re-entrant parse-param, but that seem "experimental" */
 static voxel_parse_tab_t * voxel_parse_tab;
@@ -18,19 +18,19 @@ static voxel_parse_tab_t * voxel_parse_tab;
 int voxel_parse_file(FILE * configfile, voxel_parse_tab_t * parse_tab)
 {
   voxel_parse_init(parse_tab);	/* blindly kills any previous contents... */
-  yyin = configfile;
+  vvin = configfile;
   voxel_parse_tab = parse_tab;
-  return yyparse();
+  return vvparse();
 }
 
 
-void yyerror(const char * str)
+void vverror(const char * str)
 {
   fprintf(stderr, "error: %s\n", str);
 }
 
 
-int yywrap()
+int vvwrap()
 {
   return 1;
 }

@@ -37,16 +37,19 @@
 #include <stdio.h>
 
 
-#define VOXEL_DRAW_DATA_SIZE 32
 #define VOXEL_PARSE_COLORMAP_SIZE 256
 
 
 typedef struct voxel_s {
-  double x, y, z;
-  double r, g, b;
+  double pos[3];		/* x, y, z */
+  double color[3];		/* r, g, b */
+  double length;		/* cube side length, sphere radius, or so */
+  double off[3];		/* offsets along x, y, and z */
+  double balloondist;		/* distance measure for balloon */
+  double warpdist;		/* distance measure for warp */
+  double warp[3];		/* unit warp vector */
+  void (*draw)(struct voxel_s const * vv); /* defaults to cube */
   struct voxel_s * next;
-  void (*draw)(struct voxel_s * vv); /* defaults to unit cube without offset */
-  double draw_data[VOXEL_DRAW_DATA_SIZE];
 } voxel_t;
 
 
@@ -71,12 +74,9 @@ voxel_t * voxel_create(double x, double y, double z,
 		       double r, double g, double b);
 void voxel_free_list(voxel_t * first);
 
-void voxel_draw_unit_cube(voxel_t const * vv);
-void voxel_draw_cube(voxel_t const * vv, double sidelength,
-		     double xoff, double yoff, double zoff);
-void voxel_draw_sphere(voxel_t const * vv, double radius,
-		       double xoff, double yoff, double zoff);
-void voxel_draw_list(voxel_t * first);
+void voxel_draw_cube(voxel_t const * vv);
+void voxel_draw_sphere(voxel_t const * vv);
+void voxel_draw_list(voxel_t * const first);
 
 
 int voxel_parse_file(FILE * configfile, voxel_parse_tab_t * parse_tab);
@@ -87,5 +87,6 @@ void voxel_parse_color(voxel_parse_tab_t * parse_tab, unsigned char colorchar,
 void voxel_parse_layer(voxel_parse_tab_t * parse_tab);
 void voxel_parse_line(voxel_parse_tab_t * parse_tab,
 		      const unsigned char * line);
+
 
 #endif /* HAIKO_VOXEL_H */

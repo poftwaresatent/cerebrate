@@ -34,7 +34,8 @@
 #include "voxel.h"
 #include "wrap_glut.h"
 #include <stdlib.h>
-#include <stdio.h>
+/* #include <stdio.h> */
+/* #include <math.h> */
 
 
 voxel_t * voxel_create(double x, double y, double z,
@@ -43,14 +44,15 @@ voxel_t * voxel_create(double x, double y, double z,
   voxel_t * result = calloc(1, sizeof(voxel_t));
   if (NULL == result)
     return NULL;
-  result->x = x;
-  result->y = y;
-  result->z = z;
-  result->r = r;
-  result->g = g;
-  result->b = b;
+  result->pos[0] = x;
+  result->pos[1] = y;
+  result->pos[2] = z;
+  result->color[0] = r;
+  result->color[1] = g;
+  result->color[2] = b;
+  result->length = 1;
+  result->draw = voxel_draw_cube;
   result->next = NULL;
-  result->draw = (void (*)(struct voxel_s*)) voxel_draw_unit_cube;
   return result;
 }
 
@@ -65,37 +67,28 @@ void voxel_free_list(voxel_t * first)
 }
 
 
-void voxel_draw_unit_cube(struct voxel_s const * vv)
+void voxel_draw_cube(voxel_t const * vv)
 {
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
-  glTranslatef(vv->x, vv->y, vv->z);
-  glColor3d(vv->r, vv->g, vv->b);
-  glutSolidCube(1);
+  glTranslatef(vv->pos[0] + vv->off[0],
+	       vv->pos[1] + vv->off[1],
+	       vv->pos[2] + vv->off[2]);
+  glColor3d(vv->color[0], vv->color[1], vv->color[2]);
+  glutSolidCube(vv->length);
   glPopMatrix();
 }
 
 
-void voxel_draw_cube(voxel_t const * vv, double sidelength,
-		     double xoff, double yoff, double zoff)
+void voxel_draw_sphere(voxel_t const * vv)
 {
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
-  glTranslatef(vv->x + xoff, vv->y + yoff, vv->z + zoff);
-  glColor3d(vv->r, vv->g, vv->b);
-  glutSolidCube(sidelength);
-  glPopMatrix();
-}
-
-
-void voxel_draw_sphere(voxel_t const * vv, double radius,
-		       double xoff, double yoff, double zoff)
-{
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glTranslatef(vv->x + xoff, vv->y + yoff, vv->z + zoff);
-  glColor3d(vv->r, vv->g, vv->b);
-  glutSolidSphere(radius, 12, 12);
+  glTranslatef(vv->pos[0] + vv->off[0],
+	       vv->pos[1] + vv->off[1],
+	       vv->pos[2] + vv->off[2]);
+  glColor3d(vv->color[0], vv->color[1], vv->color[2]);
+  glutSolidSphere(vv->length, 12, 12);
   glPopMatrix();
 }
 
@@ -118,7 +111,7 @@ void voxel_parse_init(voxel_parse_tab_t * parse_tab)
   parse_tab->layer = -1;
   parse_tab->line = -1;
   parse_tab->error = 0;
-  parse_tab->debug = 0;
+  /*   parse_tab->debug = 0; */
   parse_tab->first = NULL;
   parse_tab->last = NULL;
   parse_tab->nlayers = 0;
