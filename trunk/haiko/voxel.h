@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2008 Roland Philippsen <roland.philippsen@gmx.net>
+ * Copyright (C) 2008 Roland Philippsen <roland dot philippsen at gmx dot net>
  * 
  * BSD-style license:
  *

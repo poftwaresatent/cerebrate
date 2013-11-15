@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2008 Roland Philippsen <roland.philippsen@gmx.net>
+ * Copyright (C) 2008 Roland Philippsen <roland dot philippsen at gmx dot net>
  * 
  * BSD-style license:
  *
@@ -33,11 +33,13 @@
 #include "wrap_gl.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <png.h>
 
+/* until end of file */
+#ifdef HAVE_PNG_H
 
-/* What does this depend on? */
-#define BPP 3
+# include <png.h>
+
+# define BPP 3
 
 
 int wrap_gl_write_png(char const * filename, int width, int height)
@@ -138,3 +140,5 @@ int wrap_gl_write_png(char const * filename, int width, int height)
  fail_open:
   return -1;
 }
+
+#endif /* HAVE_PNG_H */

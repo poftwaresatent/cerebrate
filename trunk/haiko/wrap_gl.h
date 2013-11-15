@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2008 Roland Philippsen <roland.philippsen@gmx.net>
+ * Copyright (C) 2008 Roland Philippsen <roland dot philippsen at gmx dot net>
  * 
  * BSD-style license:
  *
@@ -33,6 +33,10 @@
 #ifndef HAIKO_WRAP_GL_H
 # define HAIKO_WRAP_GL_H
 
+# ifdef HAVE_CONFIG_H
+#  include "config.h"
+# endif
+
 # ifdef LINUX
 #  include <GL/gl.h>
 # endif
@@ -41,8 +45,8 @@
 #  include <OpenGL/gl.h>
 # endif
 
-
+# ifdef HAVE_PNG_H
 int wrap_gl_write_png(char const * filename, int width, int height);
-
+# endif
 
 #endif

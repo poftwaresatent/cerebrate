@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2008 Roland Philippsen <roland.philippsen@gmx.net>
+ * Copyright (C) 2008 Roland Philippsen <roland dot philippsen at gmx dot net>
  * 
  * BSD-style license:
  *
@@ -41,6 +41,10 @@
 #include <math.h>
 #include <limits.h>
 #include <string.h>
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 
 typedef struct option_s {
@@ -451,6 +455,9 @@ void draw()
 #endif OSX
   
   if (enable.anim) {
+#ifndef HAVE_PNG_H
+    fprintf(stderr, "sorry, no animation: PNG support not built in\n");
+#else
     static int animcount = 0;
     char png_filename[64];
     if (64 <= snprintf(png_filename, 64, "anim/%05d.png", animcount))
@@ -465,13 +472,13 @@ void draw()
 	  printf("wrote PNG file '%s'\n", png_filename);
       }
     }
+#endif
   }
 }
 
 
 void keyboard(unsigned char key, int x, int y)
 {
-  static int scrcount = 0;
   switch (key) {
   case 'q':
     exit(EXIT_SUCCESS);
@@ -497,7 +504,11 @@ void keyboard(unsigned char key, int x, int y)
       printf("anim %s\n", enable.anim ? "enabled" : "disabled");
     break;
   case 'p':
+#ifndef HAVE_PNG_H
+    fprintf(stderr, "sorry, no screenshot: PNG support not built in\n");
+#else
     {
+      static int scrcount = 0;
       char png_filename[64];
       if (64 <= snprintf(png_filename, 64, "scr/%05d.png", scrcount))
 	fprintf(stderr, "buffer too small for filename 'scr/%05d.png'\n",
@@ -512,6 +523,7 @@ void keyboard(unsigned char key, int x, int y)
 	}
       }
     }
+#endif
     break;
   }
 }
