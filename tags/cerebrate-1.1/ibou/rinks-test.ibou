@@ -1,0 +1,23 @@
+host rinks
+kp 4.0
+ki 0.03
+kd 0
+imax 2
+tspeed_deg 360
+acc_deg 360
+dec_deg 360
+dzone_deg 5
+
+limit 2 fake_shutdown
+
+homing positive 0
+
+# move <speed [deg/s]> <position [deg]>
+# pause <minutes> <seconds>
+
+move    30   60
+pause    0   10
+move    30  -60
+pause    0   10
+move    10    0
+pause    0   10
