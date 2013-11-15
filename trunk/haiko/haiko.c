@@ -67,8 +67,41 @@ typedef struct init_s {
 } init_t;
 
 
+typedef struct option_s {
+  unsigned int timer_delay;
+  int verbose;
+  int ortho_projection;
+  int show_bounding_sphere;
+  int axes_only;
+  int reflection_effect;
+  double view_reldist;
+  char const * filename;
+} option_t;
+
+
+typedef struct enable_s {
+  int spin;
+  int balloon;
+  int warp;
+  int anim;
+} enable_t;
+
+
+typedef struct view_s {
+  double radius;
+  double dist;
+  double lrbt;			/* left, right, bottom, top */
+  double near;
+  double far;
+  double center[3];		/* x, y, z */
+  double eye[3];		/* x, y, z */
+} view_t;
+
+
+static void init_static();
 static void usage(FILE * os);
 static void parse_options(int argc, char ** argv);
+
 static void init_glut(int * argc, char ** argv, int width, int height);
 static void reshape(int width, int height);
 static void draw();
@@ -77,11 +110,13 @@ static void timer(int handle);
 static void mouse(int button, int state, int x, int y);
 static void motion(int x, int y);
 static void cleanup();
+
 static void just_axes();
+static void init_view();
 
 static void cube_drawer(struct voxel_s * vv);
 static void sphere_drawer(struct voxel_s * vv);
-static void init_view();
+
 static void init_drawers_cube(struct voxel_s * first);
 static void init_drawers_sphere(struct voxel_s * first);
 
@@ -111,58 +146,31 @@ static void init_warp_z(struct voxel_s * first);
 static int parse_wibble(wibble_t * ww, init_t *ii, char * argument);
 
 
-static unsigned int timer_delay = 100;
-static int winwidth, winheight;
-static trackball_state * trackball;
-static int left_down = 0;
+static void (*init_drawers)(struct voxel_s * first) = init_drawers_cube;
+
+static int    winwidth = 400;
+static int    winheight = 400;
+static int    left_down = 0;
 static double theta = 0;
-static int enable_spin = 1;
-static int enable_balloon = 1;
-static int enable_warp = 1;
-static int enable_anim = 0;
-static voxel_t * voxel;
-static int dim_x = 0;
-static int dim_y = 0;
-static int dim_z = 0;
-static double view_rad = -1;
-static double view_rel_dist = 2;
-static double view_dist;
-static double view_lrbt;	/* left, right, bottom, top */
-static double view_near;
-static double view_far;
-static double center_x;
-static double center_y;
-static double center_z;
-static double eye_x;
-static double eye_y;
-static double eye_z;
-static int verbose = 0;
-static int ortho_projection = 0;
-static int show_bounding_sphere = 0;
-static int axes_only = 0;
-static int reflection_effect = 0;
-static char const * filename = "haiko.conf";
+static int    dim_x = 0;
+static int    dim_y = 0;
+static int    dim_z = 0;
 
-static void (*init_drawers)(struct voxel_s * first) = init_drawers_sphere;
-
-static init_t init_balloon;
+static option_t option;
+static enable_t enable;
+static view_t   view;
+static init_t   init_balloon;
+static init_t   init_warp;
 static wibble_t balloon;
-
-static init_t init_warp;
 static wibble_t warp;
+
+static trackball_state * trackball;
+static voxel_t * voxel;
 
 
 int main(int argc, char ** argv)
 {
-  init_balloon.init_rad = init_balloon_rad;
-  init_balloon.init_x = init_balloon_x;
-  init_balloon.init_y = init_balloon_y;
-  init_balloon.init_z = init_balloon_z;
-  
-  init_warp.init_rad = init_warp_rad;
-  init_warp.init_x = init_warp_x;
-  init_warp.init_y = init_warp_y;
-  init_warp.init_z = init_warp_z;
+  init_static();
   
   if (0 != atexit(cleanup)) {
     perror("atexit()");
@@ -170,20 +178,17 @@ int main(int argc, char ** argv)
   }
   
   parse_options(argc, argv);
-  
-  winwidth = 400;
-  winheight = 400;
   trackball = gltrackball_init();
   
-  if (axes_only)
+  if (option.axes_only)
     just_axes();
   else {
     voxel_parse_tab_t voxel_parse_tab;
     FILE * configfile;
-    if (0 == strcmp(filename, "--"))
+    if (0 == strcmp(option.filename, "--"))
       configfile = stdin;
     else {
-      configfile = fopen(filename, "r");
+      configfile = fopen(option.filename, "r");
       if (NULL == configfile) {
 	perror("fopen()");
 	exit(EXIT_FAILURE);
@@ -197,7 +202,7 @@ int main(int argc, char ** argv)
     voxel = voxel_parse_tab.first;
     if (voxel_parse_tab.error) {
       fprintf(stderr, "%s: error parsing voxels from '%s'\n",
-	      argv[0], filename);
+	      argv[0], option.filename);
       exit(EXIT_FAILURE);
     }
     
@@ -213,10 +218,7 @@ int main(int argc, char ** argv)
   }
   
   init_view();
-  balloon.initialized = 0;
-  warp.initialized = 0;
   init_drawers(voxel);
-  
   init_glut(&argc, argv, winwidth, winheight);
   
   glClearColor(0.0, 0.0, 0.2, 0.0);
@@ -224,7 +226,7 @@ int main(int argc, char ** argv)
   glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
   glEnable(GL_COLOR_MATERIAL);
   
-  if (reflection_effect) {
+  if (option.reflection_effect) {
     GLfloat spec[] = { 0.5, 0.8, 1.0, 1.0 };
     glMaterialfv(GL_FRONT, GL_SPECULAR, spec);
     glMaterialf(GL_FRONT, GL_SHININESS, 20);
@@ -271,7 +273,7 @@ void init_glut(int * argc, char ** argv, int width, int height)
   glutDisplayFunc(draw);
   glutReshapeFunc(reshape);
   glutKeyboardFunc(keyboard);
-  glutTimerFunc(timer_delay, timer, handle);
+  glutTimerFunc(option.timer_delay, timer, handle);
   glutMouseFunc(mouse);
   glutMotionFunc(motion);
 }
@@ -279,38 +281,42 @@ void init_glut(int * argc, char ** argv, int width, int height)
 
 void init_view()
 {
-  view_rad = 0.5 * sqrt(pow(dim_x, 2) + pow(dim_y, 2) + pow(dim_z, 2));
-  if (1.1 > view_rel_dist)
-    view_rel_dist = 1.1;
-  view_dist = view_rel_dist * view_rad;
-  view_far = view_dist + 2 * view_rad;
-  view_near = view_dist - view_rad;
-  view_lrbt = 
-    (view_rad * view_dist - pow(view_rad, 2))
-    / sqrt(pow(view_dist, 2) - pow(view_rad, 2));
-  center_x = 0.5 * (dim_x - 1);
-  center_y = 0.5 * (dim_y - 1);
-  center_z = 0.5 * (dim_z - 1);
+  view.radius = 0.5 * sqrt(pow(dim_x, 2) + pow(dim_y, 2) + pow(dim_z, 2));
+  if (1.1 > option.view_reldist)
+    option.view_reldist = 1.1;
+  view.dist = option.view_reldist * view.radius;
+  view.far = view.dist + 2 * view.radius;
+  view.near = view.dist - view.radius;
+  view.lrbt = 
+    (view.radius * view.dist - pow(view.radius, 2))
+    / sqrt(pow(view.dist, 2) - pow(view.radius, 2));
+  view.center[0] = 0.5 * (dim_x - 1);
+  view.center[1] = 0.5 * (dim_y - 1);
+  view.center[2] = 0.5 * (dim_z - 1);
   /* do not ask me why it is TWICE the center... */
-  eye_x = 2 * center_x + 0.5 * view_rel_dist * dim_x / view_rad;
-  eye_y = 2 * center_y + 0.5 * view_rel_dist * dim_y / view_rad;
-  eye_z = 2 * center_z + 0.5 * view_rel_dist * dim_z / view_rad;
-  if (verbose)
+  view.eye[0] =
+    2 * view.center[0] + 0.5 * option.view_reldist * dim_x / view.radius;
+  view.eye[1] =
+    2 * view.center[1] + 0.5 * option.view_reldist * dim_y / view.radius;
+  view.eye[2] =
+    2 * view.center[2] + 0.5 * option.view_reldist * dim_z / view.radius;
+  if (option.verbose)
     printf("init_view():\n"
-	   " view_rad: %g\n"
-	   " view_rel_dist: %g\n"
-	   " view_dist: %g\n"
-	   " view_lrbt: %g\n"
-	   " view_far: %g\n"
-	   " view_near: %g\n"
-	   " center_x: %g\n"
-	   " center_y: %g\n"
-	   " center_z: %g\n"
-	   " eye_x: %g\n"
-	   " eye_y: %g\n"
-	   " eye_z: %g\n",
-	   view_rad, view_rel_dist, view_dist, view_lrbt, view_far,
-	   view_near, center_x, center_y, center_z, eye_x, eye_y, eye_z);
+	   " view.radius:         %g\n"
+	   " option.view_reldist: %g\n"
+	   " view.dist:           %g\n"
+	   " view.lrbt:           %g\n"
+	   " view.far:            %g\n"
+	   " view.near:           %g\n"
+	   " view.center[0]:      %g\n"
+	   " view.center[1]:      %g\n"
+	   " view.center[2]:      %g\n"
+	   " view.eye[0]:         %g\n"
+	   " view.eye[1]:         %g\n"
+	   " view.eye[2]:         %g\n",
+	   view.radius, option.view_reldist, view.dist, view.lrbt, view.far,
+	   view.near, view.center[0], view.center[1], view.center[2],
+	   view.eye[0], view.eye[1], view.eye[2]);
 }
 
 
@@ -324,14 +330,14 @@ void reshape(int width, int height)
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();  
   
-  if (ortho_projection)
-    glOrtho(- view_rad, + view_rad,
-	    - view_rad, + view_rad,
-	    - view_rad, + view_rad);
+  if (option.ortho_projection)
+    glOrtho(- view.radius, + view.radius,
+	    - view.radius, + view.radius,
+	    - view.radius, + view.radius);
   else
-    glFrustum(- view_lrbt, + view_lrbt,
-	      - view_lrbt, + view_lrbt,
-	      view_near, view_far);
+    glFrustum(- view.lrbt, + view.lrbt,
+	      - view.lrbt, + view.lrbt,
+	      view.near, view.far);
   
   winwidth = width;
   winheight = height;
@@ -347,11 +353,11 @@ void draw()
   glLoadIdentity();
   
   glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0);
-  glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.1 / view_rad);
-  glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.01 / view_rad);
+  glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.1 / view.radius);
+  glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.01 / view.radius);
   
-  if (0 == ortho_projection)
-    gluLookAt(eye_x, eye_y, eye_z,
+  if (0 == option.ortho_projection)
+    gluLookAt(view.eye[0], view.eye[1], view.eye[2],
 	      0, 0, 0,
 	      0, 1, 0);
   
@@ -360,19 +366,23 @@ void draw()
   gltrackball_rotate(trackball);
   glRotatef(180 + theta * 100, 0.0, 1.0, 0.0);
   glRotatef(180, 1.0, 0.0, 0.0);
-  glTranslatef( - center_x, - center_y, - center_z);  
+  glTranslatef( - view.center[0], - view.center[1], - view.center[2]);  
   
   voxel_draw_list(voxel);
   
-  if (show_bounding_sphere) {
-    glTranslatef(center_x, center_y, center_z);
+  if (option.show_bounding_sphere) {
+    glTranslatef(view.center[0], view.center[1], view.center[2]);
     glColor3f(1.0, 0.5, 1.0);
-    glutWireSphere(view_rad, 12, 12);
+    glutWireSphere(view.radius, 12, 12);
   }
   
   glFlush();
   
-  if (enable_anim) {
+#ifndef OSX
+  glutSwapBuffers();
+#endif OSX
+  
+  if (enable.anim) {
     static int animcount = 0;
     char png_filename[64];
     if (64 <= snprintf(png_filename, 64, "anim/%05d.png", animcount))
@@ -383,15 +393,11 @@ void draw()
 	fprintf(stderr, "error writing PNG file '%s'\n", png_filename);
       else {
 	animcount++;
-	if (verbose)
+	if (option.verbose)
 	  printf("wrote PNG file '%s'\n", png_filename);
       }
     }
   }
-  
-#ifndef OSX
-  glutSwapBuffers();
-#endif OSX
 }
 
 
@@ -403,24 +409,24 @@ void keyboard(unsigned char key, int x, int y)
     exit(EXIT_SUCCESS);
     break;
   case ' ':
-    enable_spin = enable_spin ? 0 : 1;
-    if (verbose)
-      printf("spin %s\n", enable_spin ? "enabled" : "disabled");
+    enable.spin = enable.spin ? 0 : 1;
+    if (option.verbose)
+      printf("spin %s\n", enable.spin ? "enabled" : "disabled");
     break;
   case 'b':
-    enable_balloon = enable_balloon ? 0 : 1;
-    if (verbose)
-      printf("balloon %s\n", enable_balloon ? "enabled" : "disabled");
+    enable.balloon = enable.balloon ? 0 : 1;
+    if (option.verbose)
+      printf("balloon %s\n", enable.balloon ? "enabled" : "disabled");
     break;
   case 'w':
-    enable_warp = enable_warp ? 0 : 1;
-    if (verbose)
-      printf("warp %s\n", enable_warp ? "enabled" : "disabled");
+    enable.warp = enable.warp ? 0 : 1;
+    if (option.verbose)
+      printf("warp %s\n", enable.warp ? "enabled" : "disabled");
     break;
   case 'a':
-    enable_anim = enable_anim ? 0 : 1;
-    if (verbose)
-      printf("anim %s\n", enable_anim ? "enabled" : "disabled");
+    enable.anim = enable.anim ? 0 : 1;
+    if (option.verbose)
+      printf("anim %s\n", enable.anim ? "enabled" : "disabled");
     break;
   case 'p':
     {
@@ -433,7 +439,7 @@ void keyboard(unsigned char key, int x, int y)
 	  fprintf(stderr, "error writing PNG file '%s'\n", png_filename);
 	else {
 	  scrcount++;
-	  if (verbose)
+	  if (option.verbose)
 	    printf("wrote PNG file '%s'\n", png_filename);
 	}
       }
@@ -446,17 +452,17 @@ void keyboard(unsigned char key, int x, int y)
 void timer(int handle)
 {
   if (0 == left_down) {
-    if (enable_spin)
+    if (enable.spin)
       theta += 0.01;
-    if (enable_balloon)
+    if (enable.balloon)
       update_balloon(voxel);
-    if (enable_warp)
+    if (enable.warp)
       update_warp(voxel);
   }
   
   glutSetWindow(handle);
   glutPostRedisplay();
-  glutTimerFunc(timer_delay, timer, handle);
+  glutTimerFunc(option.timer_delay, timer, handle);
 }
 
 
@@ -483,11 +489,13 @@ void motion(int x, int y)
 void cleanup()
 {
   if (NULL != trackball) {
-    /*     printf("freeing trackball\n"); */
+    if (option.verbose)
+      printf("freeing trackball\n");
     free(trackball);
   }
   if (NULL != voxel) {
-    /*     printf("freeing voxels\n"); */
+    if (option.verbose)
+      printf("freeing voxels\n");
     voxel_free_list(voxel);
   }
 }
@@ -523,7 +531,7 @@ void usage(FILE * os)
     "  -w <wibble:direction:duration:period:speed:minval:maxgrow:power>\n"
     "               see -b for details\n"
     "\n"
-    "default: -f haiko.conf -d 2 -t 100 -D sphere\n"
+    "default: -f haiko.conf -d 2 -t 100 -D cube\n"
     "\n"
     "example ballooning effects:\n"
     "  -b bump:rad:0.3:2.5:0.03:0.75:0.75:1.5\n"
@@ -555,23 +563,23 @@ void parse_options(int argc, char ** argv)
 	exit(EXIT_SUCCESS);
 	
       case 'v':
-	verbose = 1;
+	option.verbose = 1;
 	break;
 	
       case 'o':
-	ortho_projection = 1;
+	option.ortho_projection = 1;
 	break;
 	
       case 's':
-	show_bounding_sphere = 1;
+	option.show_bounding_sphere = 1;
 	break;
 	
       case 'a':
-	axes_only = 1;
+	option.axes_only = 1;
 	break;
 	
       case 'r':
-	reflection_effect = 1;
+	option.reflection_effect = 1;
 	break;
 	
       case 'f':
@@ -581,7 +589,7 @@ void parse_options(int argc, char ** argv)
 	  fprintf(stderr, "\n%s: -f requires a filename argument\n", argv[0]);
 	  exit(EXIT_FAILURE);
 	}
-	filename = argv[ii];
+	option.filename = argv[ii];
 	break;
 	
       case 'd':
@@ -594,7 +602,7 @@ void parse_options(int argc, char ** argv)
 	}
 	{
 	  char * endptr;
-	  view_rel_dist = strtod(argv[ii], &endptr);
+	  option.view_reldist = strtod(argv[ii], &endptr);
 	  if (endptr == argv[ii]) {
 	    usage(stderr);
 	    fprintf(stderr,
@@ -624,7 +632,7 @@ void parse_options(int argc, char ** argv)
 		    argv[0], argv[ii], UINT_MAX);
 	    exit(EXIT_FAILURE);
 	  }
-	  timer_delay = (unsigned int) delay;
+	  option.timer_delay = (unsigned int) delay;
 	}
 	break;
 	
@@ -849,9 +857,9 @@ void init_balloon_rad(struct voxel_s * first)
 {
   while (NULL != first) {
     draw_data_t * data = (draw_data_t*) first->draw_data;
-    data->balloondist = sqrt(pow(first->x - center_x, 2) +
-			     pow(first->y - center_y, 2) +
-			     pow(first->z - center_z, 2)) / view_rad;
+    data->balloondist = sqrt(pow(first->x - view.center[0], 2) +
+			     pow(first->y - view.center[1], 2) +
+			     pow(first->z - view.center[2], 2)) / view.radius;
     first = first->next;
   }
 }
@@ -912,9 +920,9 @@ void init_warp_rad(struct voxel_s * first)
 {
   while (NULL != first) {
     draw_data_t * data = (draw_data_t*) first->draw_data;
-    data->xwarp = (first->x - center_x);
-    data->ywarp = (first->y - center_y);
-    data->zwarp = (first->z - center_z);
+    data->xwarp = (first->x - view.center[0]);
+    data->ywarp = (first->y - view.center[1]);
+    data->zwarp = (first->z - view.center[2]);
     data->warpdist = sqrt(pow(data->xwarp, 2) + pow(data->ywarp, 2) +
 			  pow(data->zwarp, 2));
     if (fabs(data->warpdist) > 1e-3) {	/* hm, magic number... */
@@ -922,7 +930,7 @@ void init_warp_rad(struct voxel_s * first)
       data->ywarp /= data->warpdist;
       data->zwarp /= data->warpdist;
     }
-    data->warpdist /= view_rad;
+    data->warpdist /= view.radius;
     first = first->next;
   }
 }
@@ -1058,8 +1066,8 @@ int parse_wibble(wibble_t * ww, init_t * ii, char * argument)
     return -1;
   }
   
-  if (verbose)
-    printf("DEBUG -b argument parsing:\n"
+  if (option.verbose)
+    printf("DEBUG wibble argument parsing:\n"
 	   " wibble:    '%s'\n"
 	   " direction: '%s'\n"
 	   " rest:      '%s'\n"
@@ -1074,4 +1082,37 @@ int parse_wibble(wibble_t * ww, init_t * ii, char * argument)
 	   ww->minval, ww->maxgrow, ww->power);
   
   return 0;
+}
+
+
+void init_static()
+{
+  option.timer_delay = 100;
+  option.verbose = 0;
+  option.ortho_projection = 0;
+  option.show_bounding_sphere = 0;
+  option.axes_only = 0;
+  option.reflection_effect = 0;
+  option.view_reldist = 2;
+  option.filename = "haiko.conf";
+  
+  enable.spin = 1;
+  enable.balloon = 1;
+  enable.warp = 1;
+  enable.anim = 0;
+  
+  view.radius = -1;
+  
+  init_balloon.init_rad = init_balloon_rad;
+  init_balloon.init_x = init_balloon_x;
+  init_balloon.init_y = init_balloon_y;
+  init_balloon.init_z = init_balloon_z;
+  
+  init_warp.init_rad = init_warp_rad;
+  init_warp.init_x = init_warp_x;
+  init_warp.init_y = init_warp_y;
+  init_warp.init_z = init_warp_z;
+  
+  balloon.initialized = 0;
+  warp.initialized = 0;
 }
