@@ -1,0 +1,86 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  color: #ffffff;
+  background-color: #000000;
+}
+h1 {
+  font-size: 24px;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #ffffff;
+  margin-left: 0em;
+}
+h2 {
+  font-size: 20px;
+  font-weight: bold;
+  text-decoration: underline;
+  margin-left: 1em;
+}
+h3 {
+  font-size: 16px;
+  font-weight: bold;
+  text-decoration: underline;
+  margin-left: 2em;
+}
+h4 {
+  font-size: 16px;
+  font-weight: bold;
+  margin-left: 2em;
+}
+p {
+  margin-left: 2em;
+}
+pre {
+  margin-left: 2em;
+}
+a:link {
+  color: #ffcc33;
+  text-weight: bold;
+  text-decoration: none;
+}
+a:visited {
+  color: #6699ff;
+  text-weight: bold;
+  text-decoration: none;
+}
+a:active {
+  color: #ffff00;
+  text-weight: bold;
+  text-decoration: none;
+}
+a img {
+  border-width: 0px;
+}
+td {
+  vertical-align: top;
+}
+.command {
+  font-family: courier, fixed, monospace;
+  margin-left: 3em;
+  padding: 1ex;
+  white-space: nowrap;
+  background-color: #333333;
+  color: #00ff00;
+}
+.removed {
+  text-decoration: line-through;
+  color: #cccccc;
+}
+.plain {
+  color: #000000;
+  background-color: #ffffff;
+}
+.warning {
+  font-weight: bold;
+  margin-left: 4em;
+  padding: 1ex;
+  background-color: #ff3300;
+  color: #000099;
+}
+.note {
+  margin-left: 3em;
+  padding: 1ex;
+  background-color: #000033;
+  color: #ffffff;
+}
