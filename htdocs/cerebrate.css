@@ -9,24 +9,13 @@ h1 {
   font-weight: bold;
   text-decoration: underline;
   color: #ffffff;
-  margin-left: 0em;
+  margin-left: 1em;
 }
 h2 {
   font-size: 20px;
   font-weight: bold;
-  text-decoration: underline;
+  text-decoration: none;
   margin-left: 1em;
-}
-h3 {
-  font-size: 16px;
-  font-weight: bold;
-  text-decoration: underline;
-  margin-left: 2em;
-}
-h4 {
-  font-size: 16px;
-  font-weight: bold;
-  margin-left: 2em;
 }
 p {
   margin-left: 2em;
@@ -52,12 +41,6 @@ a:active {
 a img {
   border-width: 0px;
 }
-td {
-  vertical-align: top;
-}
-.bottom {
-  vertical-align: bottom;
-}
 .command {
   font-family: courier, fixed, monospace;
   margin-left: 3em;
@@ -65,25 +48,4 @@ td {
   white-space: nowrap;
   background-color: #333333;
   color: #00ff00;
-}
-.removed {
-  text-decoration: line-through;
-  color: #cccccc;
-}
-.plain {
-  color: #000000;
-  background-color: #ffffff;
-}
-.warning {
-  font-weight: bold;
-  margin-left: 4em;
-  padding: 1ex;
-  background-color: #ff3300;
-  color: #000099;
-}
-.note {
-  margin-left: 3em;
-  padding: 1ex;
-  background-color: #000033;
-  color: #ffffff;
 }
