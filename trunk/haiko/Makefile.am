@@ -1,7 +1,9 @@
 SRCDIR=     @abs_top_srcdir@
 BUILDDIR=   @abs_top_builddir@
 
-CPPFLAGS=   @HAIKO_CPPFLAGS@
+datadir=    @datadir@/haiko
+
+CPPFLAGS=   @HAIKO_CPPFLAGS@ -DDATADIR=\"$(datadir)\"
 CFLAGS=     $(CPPFLAGS) @HAIKO_CFLAGS@
 LDFLAGS=    @HAIKO_LDFLAGS@
 
@@ -73,8 +75,7 @@ SHAREFILES= cheshire.eff \
             sit2.vox \
             sit3.vox
 
-data_DATA= $(SHAREFILES)
-datadir=   $(prefix)/share/haiko
+data_DATA=  $(SHAREFILES)
 
 EXTRA_DIST= bootstrap-buildsystem.sh \
             build-stage.sh \

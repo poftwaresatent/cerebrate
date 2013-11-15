@@ -78,6 +78,16 @@ void voxel_draw_cube(voxel_t const * vv);
 void voxel_draw_sphere(voxel_t const * vv);
 void voxel_draw_list(voxel_t * const first);
 
+/**
+   If fname begins with a slash, use only the absolute path. If it
+   contains a slash somewhere else, use only the relative
+   path. Otherwise search first the CWD, then $HAIKO_PATH if set, then
+   $HOME/.haiko if HOME is set, then PREFIX/share/haiko (or whatever
+   was defined as datadir during configure), then give up and return
+   NULL. If a file was found, however, it is opened it read mode and
+   returned. The caller is responsible for closing the returned file.
+*/
+FILE * voxel_resolve_file(char const * fname, int verbose);
 
 int voxel_parse_file(FILE * configfile, voxel_parse_tab_t * parse_tab);
 void voxel_parse_init(voxel_parse_tab_t * parse_tab);

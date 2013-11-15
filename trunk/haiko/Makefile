@@ -11,6 +11,9 @@ YFLAGS = -d
 
 all: teffect tparse tball haiko
 
+tpath: tpath.c Makefile
+	$(CC) $(CFLAGS) -o tpath tpath.c
+
 teffect: teffect.c libhaiko.a Makefile
 	$(CC) $(CFLAGS) -o teffect teffect.c -ll -L. -lhaiko $(GFXLIBS)
 

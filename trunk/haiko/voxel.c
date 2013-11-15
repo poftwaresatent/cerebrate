@@ -34,8 +34,21 @@
 #include "voxel.h"
 #include "wrap_glut.h"
 #include <stdlib.h>
-/* #include <stdio.h> */
-/* #include <math.h> */
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/param.h>
+#include <stdio.h>
+#include <errno.h>
+
+static char const dirsep = '/';
+static char const * userdir = ".haiko";
+
+#ifdef DATADIR
+static char const * sharedir = DATADIR;
+#else
+static char const * sharedir = "/usr/local/share/haiko";
+#endif
 
 
 voxel_t * voxel_create(double x, double y, double z,
@@ -234,4 +247,306 @@ void voxel_parse_line(voxel_parse_tab_t * parse_tab,
     parse_tab->ncolumns = column;
   if (parse_tab->line > parse_tab->nlines)
     parse_tab->nlines = parse_tab->line;
+}
+
+
+/**
+   \return 1 if fname begins with dirsep, 0 if not, and -1 on error
+   (NULL or empty fname)
+*/
+static int is_absolute(char const * fname)
+{
+  if (NULL == fname)
+    return -1;
+  if (1 > strlen(fname))
+    return -1;
+  if (dirsep == fname[0])
+    return 1;
+  return 0;
+}
+
+
+/**
+   \return 1 if fname contains a dirsep, 0 if not, and -1 on error
+   (NULL or empty fname)
+*/
+static int has_dirsep(char const * fname)
+{
+  size_t len, ii;
+  if (NULL == fname)
+    return -1;
+  len = strlen(fname);
+  if (1 > len)
+    return -1;
+  for (ii = 0; ii < len; ii++)
+    if (dirsep == fname[ii])
+      return 1;
+  return 0;
+}
+
+
+/**
+   Concatenates two paths lhs+rhs, adding dirsep between them, then
+   calls realpath() to canonicalize the result.
+   
+   \return 0 on success, -1 on argument error (NULL or empty lhs or
+   rhs), -2 if realpath() fails (in which case an error message is
+   written to stderr).
+*/
+static int path_concat(/** buf is assumed to be char[PATH_MAX] and
+			   will be overwritten */
+		       char * buf, char const * lhs, char const * rhs,
+		       int verbose)
+{
+  char lbuf[PATH_MAX];
+  size_t lhslen, rhslen;
+  char * cur;
+  
+  if (verbose)
+    printf("  path_concat(buf, \"%s\", \"%s\")\n", lhs, rhs);
+  
+  if ((NULL == lhs) || (NULL == rhs)) {
+    if (verbose)
+      printf("  path_concat(): lhs or rhs is NULL\n");
+    return -1;
+  }
+  lhslen = strlen(lhs);
+  rhslen = strlen(rhs);
+  if ((1 > lhslen) || (1 > rhslen)) {
+    if (verbose)
+      printf("  path_concat(): lhs or rhs is empty\n");
+    return -1;
+  }
+  if (PATH_MAX - 1 <= lhslen + rhslen) { /* -1 because we add a dirsep */
+    if (verbose)
+      printf("  path_concat(): lhs+rhs is too long\n");
+    return -1;
+  }
+  
+  cur = stpcpy(lbuf, lhs);
+  *cur = dirsep;
+  strcpy(cur + 1, rhs);
+  
+  if (verbose)
+    printf("  path_concat(): calling realpath(\"%s\", buf)\n", lbuf);
+  
+  if (NULL == realpath(lbuf, buf)) {
+    if (verbose)
+      printf("  path_concat(): %s: %s\n", buf, strerror(errno));
+    return -2;
+  }
+  return 0;
+}
+
+
+FILE * voxel_resolve_file(char const * fname, int verbose)
+{
+  FILE * result = NULL;
+  char buf[PATH_MAX];
+  char * home = getenv("HOME");
+  char * haiko_path = getenv("HAIKO_PATH");
+  char userdir_path[PATH_MAX];
+  char sharedir_path[PATH_MAX];
+  
+  if (NULL == home) {
+    if (verbose)
+      printf("no home directory\n");
+    userdir_path[0] = '\0';
+  }
+  else {
+    if (verbose)
+      printf("abspath of userdir \"%s\" + \"%s\"\n", home, userdir);
+    switch (path_concat(userdir_path, home, userdir, verbose)) {
+    case -1:
+      if (verbose)
+	printf("  ERROR in path_concat()\n");
+      userdir_path[0] = '\0';
+      break;
+    case -2:
+      if (verbose)
+	printf("  realpath() failed\n");
+      userdir_path[0] = '\0';
+      break;
+    case 0:
+      if (verbose)
+	printf("  RESOLVED \"%s\"\n", userdir_path);
+      break;
+    default:
+      fprintf(stderr,
+	      "voxel_resolve_file(): BUG? unhandled path_concat() retval\n");
+      userdir_path[0] = '\0';
+    }
+    if (('\0' != userdir_path[0]) && verbose)
+      printf("userdir_path \"%s\"\n", userdir_path);
+  }
+  
+  if (NULL == realpath(sharedir, sharedir_path)) {
+    if (verbose)
+      printf("invalid sharedir \"%s\"\n  %s: %s\n",
+	     sharedir, sharedir_path, strerror(errno));
+    sharedir_path[0] = '\0';
+  }
+  else if (verbose)
+    printf("sharedir_path \"%s\"\n", sharedir_path);
+
+  if (verbose)
+    printf("resolving filename \"%s\"\n", fname);
+  
+  switch (is_absolute(fname)) {
+  case -1:
+    if (verbose)
+      printf("  ERROR in is_absolute()\n");
+    break;
+  case 0:
+    /* not absolute */
+    break;
+  case 1:
+    if (verbose)
+      printf("  resolved absolute path\n");
+    result = fopen(fname, "r");
+    if (NULL != result) {
+      if (verbose)
+	printf("  FOUND absolute path\n");
+      return result;
+    }
+    if (verbose)
+      printf("  absolute path is not a (valid) file\n");
+    break;
+  default:
+    fprintf(stderr,
+	    "voxel_resolve_file(): BUG? unhandled is_absolute() retval\n");
+  }
+  
+  switch (has_dirsep(fname)) {
+  case -1:
+    if (verbose)
+      printf("  ERROR in has_dirsep()\n");
+    break;
+  case 0:
+    /* no dirsep in fname */
+    break;
+  case 1:
+    if (verbose)
+      printf("  resolved relative path\n");
+    result = fopen(fname, "r");
+    if (NULL != result) {
+      if (verbose)
+	printf("  FOUND relative path\n");
+      return result;
+    }
+    if (verbose)
+      printf("  relative path is not a (valid) file\n");
+    break;
+  default:
+    fprintf(stderr,
+	    "voxel_resolve_file(): BUG? unhandled has_dirsep() retval\n");
+  }
+  
+  if (NULL == haiko_path) {
+    if (verbose)
+      printf("  no HAIKO_PATH\n");
+  }
+  else {
+    if (verbose)
+      printf("  HAIKO_PATH + fname = \"%s\" + \"%s\"\n", haiko_path, fname);
+    switch (path_concat(buf, haiko_path, fname, verbose)) {
+    case -1:
+      if (verbose)
+	printf("    ERROR in path_concat()\n");
+      break;
+    case -2:
+      if (verbose)
+	printf("    realpath() failed\n");
+      break;
+    case 0:
+      if (verbose)
+	printf("    resolved file in HAIKO_PATH: \"%s\"\n", buf);
+      result = fopen(buf, "r");
+      if (NULL != result) {
+	if (verbose)
+	  printf("  FOUND in HAIKO_PATH\n");
+	return result;
+      }
+      if (verbose)
+	printf("  invalid file in HAIKO_PATH\n");
+      break;
+    default:
+      fprintf(stderr,
+	      "voxel_resolve_file(): BUG? unhandled path_concat() retval\n");
+    }
+  }
+  
+  if ('\0' == userdir_path[0]) {
+    if (verbose)
+      printf("  no userdir_path\n");
+  }
+  else {
+    if (verbose)
+      printf("  userdir_path + fname = \"%s\" + \"%s\"\n",
+	     userdir_path, fname);
+    switch (path_concat(buf, userdir_path, fname, verbose)) {
+    case -1:
+      if (verbose)
+	printf("    ERROR in path_concat()\n");
+      break;
+    case -2:
+      if (verbose)
+	printf("    realpath() failed\n");
+      break;
+    case 0:
+      if (verbose)
+	printf("    resolved file in userdir: \"%s\"\n", buf);
+      result = fopen(buf, "r");
+      if (NULL != result) {
+	if (verbose)
+	  printf("  FOUND in userdir\n");
+	return result;
+      }
+      if (verbose)
+	printf("  invalid file in userdir\n");
+      break;
+    default:
+      fprintf(stderr,
+	      "voxel_resolve_file(): BUG? unhandled path_concat() retval\n");
+    }
+  }
+  
+  if ('\0' == sharedir_path[0]) {
+    if (verbose)
+      printf("  no sharedir_path\n");
+  }
+  else {
+    if (verbose)
+      printf("  sharedir_path + fname = \"%s\" + \"%s\"\n",
+	     sharedir_path, fname);
+    switch (path_concat(buf, sharedir_path, fname, verbose)) {
+    case -1:
+      if (verbose)
+	printf("    ERROR in path_concat()\n");
+      break;
+    case -2:
+      if (verbose)
+	printf("    realpath() failed\n");
+      break;
+    case 0:
+      if (verbose)
+	printf("    resolved file in sharedir: \"%s\"\n", buf);
+      result = fopen(buf, "r");
+      if (NULL != result) {
+	if (verbose)
+	  printf("  FOUND in sharedir\n");
+	return result;
+      }
+      if (verbose)
+	printf("  invalid file in sharedir\n");
+      break;
+    default:
+      fprintf(stderr,
+	      "voxel_resolve_file(): BUG? unhandled path_concat() retval\n");
+    }
+  }
+  
+  if (verbose)
+    printf("  SORRY, could not resolve file \"%s\"\n", fname);
+  return NULL;
 }

@@ -144,11 +144,10 @@ int main(int argc, char ** argv)
     if (0 == strcmp(option.voxel_filename, "--"))
       configfile = stdin;
     else {
-      configfile = fopen(option.voxel_filename, "r");
+      configfile = voxel_resolve_file(option.voxel_filename, option.verbose);
       if (NULL == configfile) {
-	fprintf(stderr, "error opening voxel file %s: ",
+	fprintf(stderr, "error resolving voxel file %s: ",
 		option.voxel_filename);
-	perror("fopen()");
 	exit(EXIT_FAILURE);
       }
     }
@@ -183,11 +182,10 @@ int main(int argc, char ** argv)
     if (0 == strcmp(option.effect_filename, "--"))
       configfile = stdin;
     else {
-      configfile = fopen(option.effect_filename, "r");
+      configfile = voxel_resolve_file(option.effect_filename, option.verbose);
       if (NULL == configfile) {
 	fprintf(stderr, "error opening effect file %s: ",
 		option.effect_filename);
-	perror("fopen()");
 	exit(EXIT_FAILURE);
       }
     }
