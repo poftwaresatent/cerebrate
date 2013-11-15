@@ -55,6 +55,9 @@ a img {
 td {
   vertical-align: top;
 }
+.bottom {
+  vertical-align: bottom;
+}
 .command {
   font-family: courier, fixed, monospace;
   margin-left: 3em;
