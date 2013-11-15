@@ -19,10 +19,10 @@
 
 
 #include "Effects.hpp"
-#include "Random.hpp"
-#include "gfx/wrap_glu.hpp"
-#include "gfx/Viewport.hpp"
-#include "drivers/FModTCP.hpp"
+#include <util/Random.hpp>
+#include <gfx/wrap_glu.hpp>
+#include <gfx/Viewport.hpp>
+#include <drivers/FModTCP.hpp>
 #include <iostream>
 
 

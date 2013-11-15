@@ -22,7 +22,7 @@
 #define SCANALYZER_HPP
 
 
-#include <aci/Timestamp.hpp>
+#include <util/Timestamp.hpp>
 #include <iosfwd>
 #include <vector>
 #include <memory>
