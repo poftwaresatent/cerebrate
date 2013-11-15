@@ -1,0 +1,10 @@
+prefix=      @prefix@
+exec_prefix= @exec_prefix@
+libdir=      @libdir@
+includedir=  @includedir@
+
+Name:        cerebrate
+Description: Cerebrate Driver and Application Package
+Version:     @PACKAGE_VERSION@
+Libs:        -L${libdir} @LIBS@
+Cflags:      -I${includedir}
