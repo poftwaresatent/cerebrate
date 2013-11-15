@@ -1,10 +1,10 @@
 CC = gcc
 #OPT = -O0 -g
 OPT = -O2
-CFLAGS = -DLINUX -Wall $(OPT) -pipe
+CFLAGS = -DOSX -DHAVE_COCOA -Wall $(OPT) -pipe -I/usr/local/png/include
 
-GFXLIBS = -L/usr/X11R6/lib -lglut -lGLU -lGL -lXi -lXmu
-PNGLIBS = -lpng
+GFXLIBS = -framework OpenGL -framework GLUT -lobjc
+PNGLIBS = -L/usr/local/png/lib -lpng
 
 YFLAGS = -d
 

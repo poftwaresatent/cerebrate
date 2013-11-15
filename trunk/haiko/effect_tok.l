@@ -1,6 +1,12 @@
 %{
 #include <stdlib.h>
 #include <stdio.h>
+
+/* not sure how strict we should be here */
+#ifndef OSX
+# define YYSTYPE double
+#endif
+
 #include "effect_parse.tab.h"
 extern double eelval;
 %}

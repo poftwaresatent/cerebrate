@@ -1,4 +1,9 @@
 %{
+/* not sure how strict we should be here */
+#ifndef OSX
+# define YYSTYPE char *
+#endif
+
 #include "voxel_parse.tab.h"
 extern char * vvlval;
 %}
