@@ -37,24 +37,24 @@
 #include <stdio.h>
 
 
-#define HAIKO_PARSE_COLORMAP_SIZE 256
+#define VOXEL_DRAW_DATA_SIZE 32
+#define VOXEL_PARSE_COLORMAP_SIZE 256
 
 
 typedef struct voxel_s {
-  /*   double delta; */
   double x, y, z;
   double r, g, b;
-  /*   int border_on; */
-  /*   double border_r, border_g, border_b; */
   struct voxel_s * next;
+  void (*draw)(struct voxel_s * vv); /* defaults to unit cube without offset */
+  double draw_data[VOXEL_DRAW_DATA_SIZE];
 } voxel_t;
 
 
 typedef struct voxel_parse_tab_s {
   char empty;
-  double red[HAIKO_PARSE_COLORMAP_SIZE];
-  double green[HAIKO_PARSE_COLORMAP_SIZE];
-  double blue[HAIKO_PARSE_COLORMAP_SIZE];
+  double red[VOXEL_PARSE_COLORMAP_SIZE];
+  double green[VOXEL_PARSE_COLORMAP_SIZE];
+  double blue[VOXEL_PARSE_COLORMAP_SIZE];
   int layer;
   int line;
   int error;			/* 0 as long as no error occurred */
@@ -71,8 +71,13 @@ voxel_t * voxel_create(double x, double y, double z,
 		       double r, double g, double b);
 void voxel_free_list(voxel_t * first);
 
-void voxel_draw(voxel_t const * vv);
-void voxel_draw_list(voxel_t const * first);
+void voxel_draw_unit_cube(voxel_t const * vv);
+void voxel_draw_cube(voxel_t const * vv, double sidelength,
+		     double xoff, double yoff, double zoff);
+void voxel_draw_sphere(voxel_t const * vv, double radius,
+		       double xoff, double yoff, double zoff);
+void voxel_draw_list(voxel_t * first);
+
 
 int voxel_parse_file(FILE * configfile, voxel_parse_tab_t * parse_tab);
 void voxel_parse_init(voxel_parse_tab_t * parse_tab);

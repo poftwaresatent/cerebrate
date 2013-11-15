@@ -50,6 +50,7 @@ voxel_t * voxel_create(double x, double y, double z,
   result->g = g;
   result->b = b;
   result->next = NULL;
+  result->draw = (void (*)(struct voxel_s*)) voxel_draw_unit_cube;
   return result;
 }
 
@@ -64,21 +65,45 @@ void voxel_free_list(voxel_t * first)
 }
 
 
-void voxel_draw(voxel_t const * vv)
+void voxel_draw_unit_cube(struct voxel_s const * vv)
 {
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glTranslatef(vv->x, vv->y, vv->z);
   glColor3d(vv->r, vv->g, vv->b);
-  glutSolidCube(1.0);
+  glutSolidCube(1);
   glPopMatrix();
 }
 
 
-void voxel_draw_list(voxel_t const * first)
+void voxel_draw_cube(voxel_t const * vv, double sidelength,
+		     double xoff, double yoff, double zoff)
+{
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glTranslatef(vv->x + xoff, vv->y + yoff, vv->z + zoff);
+  glColor3d(vv->r, vv->g, vv->b);
+  glutSolidCube(sidelength);
+  glPopMatrix();
+}
+
+
+void voxel_draw_sphere(voxel_t const * vv, double radius,
+		       double xoff, double yoff, double zoff)
+{
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glTranslatef(vv->x + xoff, vv->y + yoff, vv->z + zoff);
+  glColor3d(vv->r, vv->g, vv->b);
+  glutSolidSphere(radius, 12, 12);
+  glPopMatrix();
+}
+
+
+void voxel_draw_list(voxel_t * first)
 {
   while (NULL != first) {
-    voxel_draw(first);
+    first->draw(first);
     first = first->next;
   }
 }
@@ -88,7 +113,7 @@ void voxel_parse_init(voxel_parse_tab_t * parse_tab)
 {
   int ii;
   parse_tab->empty = ' ';
-  for (ii = 0; ii < HAIKO_PARSE_COLORMAP_SIZE; ++ii)
+  for (ii = 0; ii < VOXEL_PARSE_COLORMAP_SIZE; ++ii)
     parse_tab->red[ii] = -1;	/* red signals 'un-initialized' */
   parse_tab->layer = -1;
   parse_tab->line = -1;
@@ -115,11 +140,11 @@ void voxel_parse_color(voxel_parse_tab_t * parse_tab, unsigned char colorchar,
   if (parse_tab->error)
     return;
   
-  if (HAIKO_PARSE_COLORMAP_SIZE <= colorchar) {
+  if (VOXEL_PARSE_COLORMAP_SIZE <= colorchar) {
     /* "never" happens ... for now */
     fprintf(stderr,
 	    "voxel_parse_color(): colorchar %c (%d) is out of range %d\n",
-	    (int) colorchar, (int) colorchar, HAIKO_PARSE_COLORMAP_SIZE);
+	    (int) colorchar, (int) colorchar, VOXEL_PARSE_COLORMAP_SIZE);
     parse_tab->error = 1;
     return;
   }
@@ -163,10 +188,10 @@ void voxel_parse_line(voxel_parse_tab_t * parse_tab,
     if (parse_tab->empty == *line)
       continue;
     
-    if (HAIKO_PARSE_COLORMAP_SIZE <= *line) { /* "never" happens */
+    if (VOXEL_PARSE_COLORMAP_SIZE <= *line) { /* "never" happens */
       fprintf(stderr,
 	      "voxel_parse_line(): colorchar %c (%d) is out of range %d\n",
-	      (int) *line, (int) *line, HAIKO_PARSE_COLORMAP_SIZE);
+	      (int) *line, (int) *line, VOXEL_PARSE_COLORMAP_SIZE);
       parse_tab->error = 1;
       return;
     }
