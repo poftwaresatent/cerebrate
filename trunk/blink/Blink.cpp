@@ -519,9 +519,12 @@ StartThread(bool dryrun, ostream * os)
 Blink::shutdown_t Blink::
 QueryShutdown(bool force_read, bool dryrun) const
 {
+  if(dryrun)
+    return KEEP_RUNNING;
+  
   if( ! m_shutdown){
-    PDEBUG("no m_shutdown\n");
-    if(force_read && ( ! dryrun)){
+    PVDEBUG("no m_shutdown\n");
+    if(force_read){
       uint8_t mask;
       const int res(fmod_tcp_rio(m_fs, 0, &mask, 0));
       if(FMOD_OK != res){
@@ -545,20 +548,18 @@ QueryShutdown(bool force_read, bool dryrun) const
   
   shutdown_t retval(KEEP_RUNNING);
   uint8_t mask(0);
-  if( ! dryrun){
-    const int res(fmod_tcp_rio(m_fs, m_shutdown->ionum, &mask, 0));
-    if(FMOD_OK != res){
-      if(0 != m_os)
-	(*m_os) << "fmod_tcp_rio() error \"" << fmod_errstr(res)
-		<< "\" on ionum " << m_shutdown->ionum << "\n";
-      retval = ERROR;
-    }
+  const int res(fmod_tcp_rio(m_fs, m_shutdown->ionum, &mask, 0));
+  if(FMOD_OK != res){
+    if(0 != m_os)
+      (*m_os) << "fmod_tcp_rio() error \"" << fmod_errstr(res)
+	      << "\" on ionum " << m_shutdown->ionum << "\n";
+    retval = ERROR;
   }
   if(m_shutdown->invert)
     mask = ~ mask;
   
-  PDEBUG("mask=0x%02x   shutdown_mask=0x%02x  AND=0x%02x\n",
-	 mask, m_shutdown->mask, mask & m_shutdown->mask);
+  PVDEBUG("mask=0x%02x   shutdown_mask=0x%02x  AND=0x%02x\n",
+	  mask, m_shutdown->mask, mask & m_shutdown->mask);
   
   bool active(false);
   if(ERROR != retval)
@@ -567,7 +568,7 @@ QueryShutdown(bool force_read, bool dryrun) const
     retval = SHUTDOWN;
   
   if(m_poster){
-    PDEBUG("unlock...\n");
+    PVDEBUG("unlock...\n");
     if(EINVAL == pthread_mutex_unlock(&m_poster->mutex)){
       if(0 != m_os)
 	(*m_os) << "Blink::Step(): pthread_mutex_unlock() error\n";
@@ -577,13 +578,13 @@ QueryShutdown(bool force_read, bool dryrun) const
   }
   
   if(retval == DISABLED)
-    PDEBUG("retval=DISABLED\n");
+    PVDEBUG("retval=DISABLED\n");
   else if(retval == KEEP_RUNNING)
-    PDEBUG("retval=KEEP_RUNNING\n");
+    PVDEBUG("retval=KEEP_RUNNING\n");
   else if(retval == SHUTDOWN)
-    PDEBUG("retval=SHUTDOWN\n");
+    PVDEBUG("retval=SHUTDOWN\n");
   else if(retval == ERROR)
-    PDEBUG("retval=ERROR\n");
+    PVDEBUG("retval=ERROR\n");
   
   return retval;
 }

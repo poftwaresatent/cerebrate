@@ -189,31 +189,30 @@ subdirs:
 	- mkdir aci blink drivers gfx ibou sfl util
 	echo "subdirs created `date`" > subdirs
 
-install:: $(LIB)
+install: install-lib install-inc install-bin
+
+install-lib: $(LIB) cerebrate.pc
 	$(MKINSTALLDIRS) $(LIBDIR)
 	$(LIBTOOL) --mode=install $(INSTALL) $(LIB) $(LIBDIR)
-	echo "installed `date`" > install
-
-install:: cerebrate.pc
 	$(MKINSTALLDIRS) $(LIBDIR)/pkgconfig
 	$(INSTALL) cerebrate.pc $(LIBDIR)/pkgconfig
-	echo "installed `date`" > install
+	echo "installed `date`" > install-lib
 
-install:: $(HEADERS)
+install-inc: $(HEADERS)
 	for header in $(HEADERS); do \
 	  subdir=`dirname $$header`; \
 	  $(MKINSTALLDIRS) $(INCLUDEDIR)/$$subdir; \
 	  $(INSTALL_DATA) $(srcdir)/$$header $(INCLUDEDIR)/$$subdir; \
 	done
-	echo "installed `date`" > install
+	echo "installed `date`" > install-inc
 
-install:: binaries
+install-bin: binaries
 	$(MKINSTALLDIRS) $(BINDIR)
 	for bin in $(BINCXXSRCS:%.cpp=%); \
 	  do \
 	    $(LIBTOOL) --mode=install $(INSTALL) $$bin $(BINDIR); \
 	done
-	echo "installed `date`" > binaries
+	echo "installed `date`" > install-bin
 
 distclean: clean
 	rm -f Makefile Doxyfile config.log config.status cerebrate.pc libtool
