@@ -32,6 +32,7 @@
 
 
 #include "gltrackball.h"
+#include "wrap_gl.h"
 #include "wrap_glut.h"
 #include "voxel.h"
 #include <stdio.h>
@@ -118,6 +119,7 @@ static double theta = 0;
 static int enable_spin = 1;
 static int enable_balloon = 1;
 static int enable_warp = 1;
+static int enable_anim = 0;
 static voxel_t * voxel;
 static int dim_x = 0;
 static int dim_y = 0;
@@ -355,21 +357,11 @@ void draw()
   
   glLightfv(GL_LIGHT0, GL_POSITION, position);
   
-#define ENABLE_TRACKBALL
-#ifdef ENABLE_TRACKBALL
   gltrackball_rotate(trackball);
-#endif
-  
-#define ENABLE_THETA
-#ifdef ENABLE_THETA
   glRotatef(180 + theta * 100, 0.0, 1.0, 0.0);
-#endif
-  
   glRotatef(180, 1.0, 0.0, 0.0);
   glTranslatef( - center_x, - center_y, - center_z);  
   
-/*   voxel_draw_cube_list(voxel, 0.8); */
-/*   voxel_draw_sphere_list(voxel, 0.8); */
   voxel_draw_list(voxel);
   
   if (show_bounding_sphere) {
@@ -379,6 +371,24 @@ void draw()
   }
   
   glFlush();
+  
+  if (enable_anim) {
+    static int animcount = 0;
+    char png_filename[64];
+    if (64 <= snprintf(png_filename, 64, "anim/%05d.png", animcount))
+      fprintf(stderr, "buffer too small for filename 'anim/%05d.png'\n",
+	      animcount);
+    else {
+      if (0 != wrap_gl_write_png(png_filename, winwidth, winheight))
+	fprintf(stderr, "error writing PNG file '%s'\n", png_filename);
+      else {
+	animcount++;
+	if (verbose)
+	  printf("wrote PNG file '%s'\n", png_filename);
+      }
+    }
+  }
+  
 #ifndef OSX
   glutSwapBuffers();
 #endif OSX
@@ -387,27 +397,47 @@ void draw()
 
 void keyboard(unsigned char key, int x, int y)
 {
-  switch(key){
+  static int scrcount = 0;
+  switch (key) {
   case 'q':
     exit(EXIT_SUCCESS);
     break;
   case ' ':
-    if (enable_spin)
-      enable_spin = 0;
-    else
-      enable_spin = 1;
+    enable_spin = enable_spin ? 0 : 1;
+    if (verbose)
+      printf("spin %s\n", enable_spin ? "enabled" : "disabled");
     break;
   case 'b':
-    if (enable_balloon)
-      enable_balloon = 0;
-    else
-      enable_balloon = 1;
+    enable_balloon = enable_balloon ? 0 : 1;
+    if (verbose)
+      printf("balloon %s\n", enable_balloon ? "enabled" : "disabled");
     break;
   case 'w':
-    if (enable_warp)
-      enable_warp = 0;
-    else
-      enable_warp = 1;
+    enable_warp = enable_warp ? 0 : 1;
+    if (verbose)
+      printf("warp %s\n", enable_warp ? "enabled" : "disabled");
+    break;
+  case 'a':
+    enable_anim = enable_anim ? 0 : 1;
+    if (verbose)
+      printf("anim %s\n", enable_anim ? "enabled" : "disabled");
+    break;
+  case 'p':
+    {
+      char png_filename[64];
+      if (64 <= snprintf(png_filename, 64, "scr/%05d.png", scrcount))
+	fprintf(stderr, "buffer too small for filename 'scr/%05d.png'\n",
+		scrcount);
+      else {
+	if (0 != wrap_gl_write_png(png_filename, winwidth, winheight))
+	  fprintf(stderr, "error writing PNG file '%s'\n", png_filename);
+	else {
+	  scrcount++;
+	  if (verbose)
+	    printf("wrote PNG file '%s'\n", png_filename);
+	}
+      }
+    }
     break;
   }
 }

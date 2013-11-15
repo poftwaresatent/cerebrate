@@ -41,4 +41,8 @@
 #  include <OpenGL/gl.h>
 # endif
 
+
+int wrap_gl_write_png(char const * filename, int width, int height);
+
+
 #endif
