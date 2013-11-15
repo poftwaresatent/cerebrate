@@ -1,4 +1,0 @@
-warp
-  spike 7.0  12.0  0.3  0.0  -1  1.5
-  distance   plane  0.5  0.5  0.5  1.0  0.0  0.0
-  direction  plane  0.5  0.5  0.5  0.0  1.0  0.0
