@@ -1,0 +1,59 @@
+empty '.'
+color '*' 119  73   0
+color 'o' 205  88  10
+color '#'   0   0   0
+
+layer
+line ".......**..."
+line ".......**..."
+line ".......**..."
+line ".......**..."
+line ".......**..."
+line "............"
+line "..oo........"
+line "..ooo..ooo.."
+line "...ooo.oooo."
+
+layer
+line ".......**..."
+line "......oooo.."
+line "......ooo#.."
+line "......ooooo."
+line ".....oooooo."
+line "...oooooooo."
+line "..ooooooo..."
+line "..oooooooo.."
+line "..ooooooooo."
+
+layer
+line "............"
+line "......oooo.."
+line "......oooo.."
+line "......ooooo."
+line ".o...oooooo."
+line "o..oooooooo#"
+line "o.ooooooo..."
+line "o.ooooooo..."
+line ".ooooooo...."
+
+layer
+line ".......**..."
+line "......oooo.."
+line "......ooo#.."
+line "......ooooo."
+line ".....oooooo."
+line "...oooooooo."
+line "..ooooooo..."
+line "..oooooooo.."
+line "..ooooooooo."
+
+layer
+line ".......**..."
+line ".......**..."
+line ".......**..."
+line ".......**..."
+line ".......**..."
+line "............"
+line "..oo........"
+line "..ooo..ooo.."
+line "...ooo.oooo."
