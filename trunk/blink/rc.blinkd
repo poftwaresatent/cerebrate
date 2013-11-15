@@ -1,0 +1,114 @@
+#!/bin/sh
+
+# utility for starting, stopping, or restarting blinkd in daemon mode
+
+PIDFILE="/var/run/blinkd.pid"
+LOGFILE="/var/log/blinkd"
+
+usage()
+{
+    echo<<EOF
+rc.blinkd start|stop|restart [configfile]
+  start, stop, or restart the blinkd daemon
+  you can add more options by setting the ARGS variable
+EOF
+    return 0
+}
+
+if [ $# -lt 1 ]; then
+    usage
+    exit 1
+fi
+OPERATION=$1
+
+if [ $# -gt 1 ]; then
+    ARGS="-c $2 ${ARGS}"
+fi
+
+BLINKD="/usr/local/bin/blinkd"
+if [ -d "${BLINKD}" -o ! -x "${BLINKD}" ]; then
+    BLINKD="./blinkd"
+fi
+if [ -d "${BLINKD}" -o ! -x "${BLINKD}" ]; then
+    echo "invalid blinkd path: ${BLINKD}"
+    exit 2
+fi
+
+NOHUP="/usr/bin/nohup"
+if [ -d "${NOHUP}" -o ! -x "${NOHUP}" ]; then
+    echo "invalid nohup path: ${NOHUP}"
+    exit 3
+fi
+
+try_start()
+{
+    if [ -e "${PIDFILE}" ]; then
+	echo "error: PID file exists already: ${PIDFILE}"
+	echo "purging..."
+	kill `cat "${PIDFILE}"`
+	rm -f "${PIDFILE}"
+    fi
+    ${NOHUP} ${BLINKD} ${ARGS} >/dev/null &
+    sleep 2
+    if [ ! -e "${PIDFILE}" ]; then
+	echo "error: PID file does not exist: ${PIDFILE}"
+	echo "looks like blinkd ${BLINKD} failed"
+	echo "for details, see nohup.out and/or ${LOGFILE}"
+	return 2
+    fi	
+    return 0
+}
+
+try_stop()
+{
+    if [ -f "${PIDFILE}" ]; then
+	if ! kill $(head -1 "${PIDFILE}"); then
+	    echo "kill failed, removing stale PID file ${PIDFILE}"
+	    rm -f "${PIDFILE}"
+	    return 1
+	fi
+	rm -f "${PIDFILE}"
+    else
+	echo "no/invalid PID file ${PIDFILE}"
+	echo "not running! (or maybe hand-kill blinkd?)"
+	return 2
+    fi
+    return 0
+}
+
+case "${OPERATION}" in
+    start)
+        echo -n "Starting blinkd..."
+	if ! try_start; then
+	    echo "ERROR"
+	    exit 4
+	fi
+	echo "OK"
+	;;
+    stop)
+        echo -n "Stopping blinkd..."
+	if ! try_stop; then
+	    echo "ERROR"
+	    exit 5
+	fi
+	echo "OK"
+	;;
+    restart)
+        echo -n "Restarting blinkd..."
+	if ! try_stop; then
+	    echo "ERROR stopping"
+	    exit 7
+	fi
+	sleep 3
+	if ! try_start; then
+	    echo "ERROR starting"
+	    exit 6
+	fi
+	echo "OK"
+	;;
+    *)
+	usage
+	;;
+esac
+
+exit 0
