@@ -59,7 +59,7 @@ typedef struct effect_s {
   double duration, period, speed, minval, maxgrow, power;
   double phase;			/* += speed at each update()  */
   double (*amplitude)(struct effect_s * ww, double dist, double instant);
-  void (*init)(struct effect_s * ww, voxel_t * first, double view_radius);
+  void (*init)(struct effect_s * ww, voxel_t * first);
   void (*update)(struct effect_s * ww, voxel_t * first);
 } effect_t;
 
@@ -107,11 +107,11 @@ double effect_amplitude_bump(effect_t * ww, double dist, double instant);
 
 double effect_amplitude_spike(effect_t * ww, double dist, double instant);
 
-void effect_balloon_init(effect_t * ww, voxel_t * first, double view_radius);
+void effect_balloon_init(effect_t * ww, voxel_t * first);
 
 void effect_balloon_update(effect_t * ww, voxel_t * first);
 
-void effect_warp_init(effect_t * ww, voxel_t * first, double view_radius);
+void effect_warp_init(effect_t * ww, voxel_t * first);
 
 void effect_warp_update(effect_t * ww, voxel_t * first);
 

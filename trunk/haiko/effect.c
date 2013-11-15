@@ -162,12 +162,10 @@ double effect_amplitude_spike(effect_t * ww, double dist, double instant)
 }
 
 
-void effect_balloon_init(struct effect_s * ww, voxel_t * first,
-			 double view_radius)
+void effect_balloon_init(struct effect_s * ww, voxel_t * first)
 {
   for (/**/; NULL != first; first = first->next)
-    first->balloondist =
-      effect_distance(first->pos, &ww->distance, NULL) / view_radius;
+    first->balloondist = effect_distance(first->pos, &ww->distance, NULL);
 }
 
 
@@ -181,17 +179,16 @@ void effect_balloon_update(struct effect_s * ww, voxel_t * first)
 }
 
 
-void effect_warp_init(struct effect_s * ww, voxel_t * first,
-		      double view_radius)
+void effect_warp_init(struct effect_s * ww, voxel_t * first)
 {
   for (/**/; NULL != first; first = first->next) {
-    first->warpdist = effect_distance(first->pos, &ww->direction, first->warp);
+    double norm = effect_distance(first->pos, &ww->direction, first->warp);
+    first->warpdist = effect_distance(first->pos, &ww->distance, NULL);
     if (fabs(first->warpdist) > 1e-6) {
       int ii;
       for (ii = 0; ii < 3; ii++)
-	first->warp[ii] /= first->warpdist;
+	first->warp[ii] /= norm;
     }
-    first->warpdist /= view_radius;
   }
 }
 

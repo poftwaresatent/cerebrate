@@ -142,7 +142,7 @@ int main(int argc, char ** argv)
     else {
       configfile = fopen(option.voxel_filename, "r");
       if (NULL == configfile) {
-	fprintf(stderr, "error opening voxel configuration file %s: ",
+	fprintf(stderr, "error opening voxel file %s: ",
 		option.voxel_filename);
 	perror("fopen()");
 	exit(EXIT_FAILURE);
@@ -181,7 +181,7 @@ int main(int argc, char ** argv)
     else {
       configfile = fopen(option.effect_filename, "r");
       if (NULL == configfile) {
-	fprintf(stderr, "error opening effect configuration file %s: ",
+	fprintf(stderr, "error opening effect file %s: ",
 		option.effect_filename);
 	perror("fopen()");
 	exit(EXIT_FAILURE);
@@ -193,13 +193,18 @@ int main(int argc, char ** argv)
       fclose(configfile);
     
     if (0 != result) {
-      fprintf(stderr, "error parsing effect configuration file: %d", result);
+      fprintf(stderr, "error parsing effect file: %d", result);
       exit(EXIT_FAILURE);
     }
   }
   
   init_view();
   init_drawers(voxel);
+  balloon.init(&balloon, voxel);
+  balloon.update(&balloon, voxel);
+  warp.init(&warp, voxel);    
+  warp.update(&warp, voxel);
+  
   init_glut(&argc, argv, winwidth, winheight);
   
   glClearColor(0.0, 0.0, 0.2, 0.0);
@@ -514,13 +519,6 @@ void keyboard(unsigned char key, int x, int y)
 
 void timer(int handle)
 {
-  static int initialized = 0;
-  if (0 == initialized) {
-    balloon.init(&balloon, voxel, view.radius);
-    warp.init(&warp, voxel, view.radius);    
-    initialized = 1;
-  }
-  
   if (0 == left_down) {
     if (enable.spin)
       theta += 0.01;
@@ -581,15 +579,16 @@ void usage(FILE * os)
     "  -s           show bounding sphere\n"
     "  -c           show coordinate axes\n"
     "  -g           show coordinate grid\n"
+    "  -E           show distance reference of effect\n"
     "  -a           no config file, just axes voxels\n"
     "  -r           enable reflection effect\n"
-    "  -f  <file>   voxel configuration file name ('--' means stdin)\n"
-    "  -e  <file>   effect configuration file name ('--' means stdin)\n"
+    "  -f  <file>   voxel file name ('--' means stdin)\n"
+    "  -e  <file>   effect file name ('--' means stdin)\n"
     "  -d  <dist>   set relative viewing distance\n"
     "  -t  <timer>  set timer interval [ms]\n"
     "  -D  <style>  drawing style: cube or sphere\n"
     "\n"
-    "default: -f haiko.conf -d 2 -t 100 -D cube\n";
+    "default: -f haiko.vox -d 2 -t 100 -D cube\n";
   fprintf(os, help);
 }
 
@@ -628,6 +627,10 @@ void parse_options(int argc, char ** argv)
 	
       case 'g':
 	option.show_grid = 1;
+	break;
+	
+      case 'E':
+	option.show_effect_distref = 1;
 	break;
 	
       case 'a':
@@ -808,7 +811,7 @@ void init_static()
   option.axes_only = 0;
   option.reflection_effect = 0;
   option.view_reldist = 2;
-  option.voxel_filename = "haiko.conf";
+  option.voxel_filename = "haiko.vox";
   option.effect_filename = "";
   
   enable.spin = 1;
