@@ -1,4 +1,4 @@
-AC_INIT([haiko], [0.0rc1], [roland DOT philippsen AT gmx DOT net])
+AC_INIT([haiko], [0.0rc2], [roland DOT philippsen AT gmx DOT net])
 AC_CONFIG_AUX_DIR([.])
 AC_PREREQ(2.57)
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
